@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Management</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            width: 80%;
+            max-width: 800px;
+            margin-top: 20px;
+            background: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        input, button, select {
+            padding: 10px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        button.danger {
+            background-color: red;
+        }
+        button.danger:hover {
+            background-color: rgb(114, 6, 6)
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .books {
+            margin-top: 20px;
+        }
+        .book {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+            position: relative;
+            display: grid;
+            grid-template-columns: repeat(6, 1fr) 50px 50px;
+            justify-content: center;
+            align-items: center;
+        }
+        .book img {
+            max-width: 75px;
+            height: auto;
+            display: block;
+            margin: 0 auto;
+        }
+        .book:last-child {
+            border-bottom: none;
+        }
+        .error {
+            color: red;
+        }
+        .modal {
+            display: none; 
+            position: fixed; 
+            z-index: 1; 
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto; 
+            background-color: rgb(0,0,0); 
+            background-color: rgba(0,0,0,0.4); 
+            padding-top: 60px;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto; 
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+        }
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 20px;
+        }
+        .pagination button {
+            margin: 0 5px;
+            padding: 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .pagination button:hover {
+            background-color: #0056b3;
+        }
+        .pagination button:disabled {
+            background-color: #ccc;
+            cursor: default;
+        }
+        .edit-modal-content {
+            background-color: #fefefe;
+            margin: 5% auto; 
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+        }
+        .books-list-header {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+            position: relative;
+            display: grid;
+            grid-template-columns: repeat(6, 1fr) 100px;
+        }
+        .books-section-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        #books-list {
+            height: 60vh;
+            overflow: auto;
+        }
+        #header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Book Management</h1>
+
+        <div id="auth-section">
+            <h2>Login</h2>
+            <form id="login-form">
+                <input type="email" id="login-email" placeholder="Email" required>
+                <input type="password" id="login-password" placeholder="Password" required>
+                <button type="submit">Login</button>
+                <p class="error" id="login-error"></p>
+            </form>
+
+            <h2>Register</h2>
+            <form id="register-form">
+                <input type="email" id="register-email" placeholder="Email" required>
+                <input type="password" id="register-password" placeholder="Password" required>
+                <button type="submit">Register</button>
+                <p class="error" id="register-error"></p>
+            </form>
+        </div>
+
+        <div id="books-section" class="books" style="display: none;">
+            <div class="books-section-controls">
+                <button id="add-book-button">Add New Book</button>
+                <div>
+                    <label for="search-input">Search Books</label>
+                    <input id="search-input" type="text">
+                </div>
+            </div>
+            <div id="header">
+                Books
+                <div id="header-section-info">
+                    
+                </div>
+            </div>
+            <div class="books-list-header">
+                <p>Title</p>
+                <p>Author</p>
+                <p>Description</p>
+                <p>Publish Year</p>
+                <p>ISBN</p>
+                <p>Image</p>
+                <p>Action</p>
+            </div>
+            <div id="books-list"></div>
+            <div id="pagination" class="pagination"></div>
+        </div>
+    </div>
+
+    <div id="book-modal" class="modal">
+        <div class="modal-content">
+            <span class="close" id="close-add-book-modal">&times;</span>
+            <h2>Add New Book</h2>
+            <form id="add-book-form">
+                <input type="text" id="book-title" placeholder="Title" required>
+                <input type="text" id="book-author" placeholder="Author" required>
+                <input type="text" id="book-description" placeholder="Description" required>
+                <input type="number" id="book-publish-year" placeholder="Publish Year" required>
+                <input type="text" id="book-isbn" placeholder="ISBN" required>
+                <input type="file" id="book-image" accept="image/*" required>
+                <button type="submit">Add Book</button>
+                <p class="error" id="add-book-error"></p>
+            </form>
+        </div>
+    </div>
+
+    <div id="edit-book-modal" class="modal">
+        <div class="edit-modal-content">
+            <span class="close" id="close-edit-book-modal">&times;</span>
+            <h2>Edit Book</h2>
+            <form id="edit-book-form">
+                <input type="hidden" id="edit-book-id">
+                <input type="text" id="edit-book-title" placeholder="Title" required>
+                <input type="text" id="edit-book-author" placeholder="Author" required>
+                <input type="text" id="edit-book-description" placeholder="Description" required>
+                <input type="number" id="edit-book-publish-year" placeholder="Publish Year" required>
+                <input type="text" id="edit-book-isbn" placeholder="ISBN" required>
+                <input type="file" id="edit-book-image" accept="image/*">
+                <button type="submit">Save Changes</button>
+                <p class="error" id="edit-book-error"></p>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const apiUrl = 'https://sirdomin.pl:8084/api';
+
+        let currentPage = 1;
+        const limit = 25;
+
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+
+            try {
+                const response = await fetch(`${apiUrl}/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Login failed');
+                }
+
+                const data = await response.json();
+                localStorage.setItem('token', data.token);
+                document.getElementById('auth-section').style.display = 'none';
+                document.getElementById('books-section').style.display = 'block';
+                loadBooks();
+            } catch (error) {
+                document.getElementById('login-error').innerText = error.message;
+            }
+        });
+
+
+        document.getElementById('register-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('register-email').value;
+            const password = document.getElementById('register-password').value;
+
+            try {
+                const response = await fetch(`${apiUrl}/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Registration failed');
+                }
+
+                const data = await response.json();
+                document.getElementById('register-error').innerText = 'Registration successful. You can now login.';
+            } catch (error) {
+                document.getElementById('register-error').innerText = error.message;
+            }
+        });
+
+        document.getElementById('search-input').addEventListener('keyup', e => {
+            const searchInput = document.getElementById('search-input');
+
+            loadBooks();
+        });
+
+        async function loadBooks(page = 1) {
+            const token = localStorage.getItem('token');
+
+            const search = document.getElementById('search-input').value;
+
+            let url = `${apiUrl}/books?page=${page}&limit=${limit}`;
+
+            if (search) {
+                url += `&search=${search}`;
+            }
+            try {
+                const response = await fetch(url, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to load books');
+                }
+
+                const data = await response.json();
+                const booksList = document.getElementById('books-list');
+                booksList.innerHTML = data.data.map(book => `
+                    <div class="book">
+                        <h3>${book.title}</h3>
+                        <p>${book.author}</p>
+                        <p>${book.description}</p>
+                        <p>${book.publishYear}</p>
+                        <p>${book.isbn}</p>
+                        <img src="${apiUrl}/books/image/${book.image}" alt="${book.title}" style="width: 100px; height: auto;">
+                        <button onclick="openEditModal(${book.id}, '${book.title}', '${book.author}', '${book.description}', ${book.publishYear}, '${book.isbn}', '${book.image}')">Edit</button>
+                        <button class="danger" onclick="deleteBook(${book.id})">X</button>
+                    </div>
+                `).join('');
+
+                setupHeader(data.data.length, data.total);
+
+                setupPagination(data.total, page);
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        document.getElementById('add-book-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const bookData = {
+                title: document.getElementById('book-title').value,
+                author: document.getElementById('book-author').value,
+                description: document.getElementById('book-description').value,
+                publishYear: document.getElementById('book-publish-year').value,
+                isbn: document.getElementById('book-isbn').value
+            };
+
+            const imageFile = document.getElementById('book-image').files[0];
+            const fileExtension = imageFile.name.split('.').pop();
+            const token = localStorage.getItem('token');
+
+            try {
+                const fileInput = document.getElementById('book-image');
+                const imageFile = fileInput.files[0];
+                const reader = new FileReader();
+
+                reader.onloadend = async () => {
+                    const base64Image = reader.result.split(',')[1];
+
+                    const response = await fetch(`${apiUrl}/books`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${localStorage.getItem('token')}`
+                        },
+                        body: JSON.stringify({
+                            ...bookData,
+                            image: base64Image,
+                            extension: fileExtension
+                        })
+                    });
+
+                    if (!response.ok) {
+                        console.error('Failed to add book:', await response.text());
+                        return;
+                    }
+
+                    const responseData = await response.json();
+                    document.getElementById('book-modal').style.display = 'none';
+                    loadBooks(currentPage);
+                };
+
+                reader.readAsDataURL(imageFile);
+            } catch (error) {
+                console.log(error);
+                document.getElementById('add-book-error').innerText = error.message;
+            }
+        });
+
+        document.getElementById('edit-book-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const bookData = {
+                id: document.getElementById('edit-book-id').value,
+                title: document.getElementById('edit-book-title').value,
+                author: document.getElementById('edit-book-author').value,
+                description: document.getElementById('edit-book-description').value,
+                publishYear: document.getElementById('edit-book-publish-year').value,
+                isbn: document.getElementById('edit-book-isbn').value
+            };
+
+            const token = localStorage.getItem('token');
+
+            try {
+                const fileInput = document.getElementById('edit-book-image');
+                const imageFile = fileInput.files[0];
+                const reader = new FileReader();
+                const fileExtension = imageFile.name.split('.').pop();
+
+                reader.onloadend = async () => {
+                    const base64Image = reader.result.split(',')[1];
+
+                    const response = await fetch(`${apiUrl}/books/${bookData.id}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${localStorage.getItem('token')}`
+                        },
+                        body: JSON.stringify({
+                            ...bookData,
+                            image: base64Image,
+                            extension: fileExtension
+                        })
+                    });
+
+                    if (!response.ok) {
+                        console.error('Failed to edit book:', await response.text());
+                        return;
+                    }
+
+                    const responseData = await response.json();
+                    document.getElementById('edit-book-modal').style.display = 'none';
+                    loadBooks(currentPage);
+                };
+
+                reader.readAsDataURL(imageFile);
+            } catch (error) {
+                console.log(error);
+                document.getElementById('edit-book-error').innerText = error.message;
+            }
+        });
+
+        async function deleteBook(id) {
+            const token = localStorage.getItem('token');
+
+            try {
+                const response = await fetch(`${apiUrl}/books/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to delete book');
+                }
+
+                loadBooks(currentPage);
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        function setupPagination(totalBooks, currentPage) {
+            const pagination = document.getElementById('pagination');
+            const totalPages = Math.ceil(totalBooks / limit);
+
+            pagination.innerHTML = `
+                <button ${currentPage === 1 ? 'disabled' : ''} onclick="loadBooks(${currentPage - 1})">Previous</button>
+                <span>Page ${currentPage} of ${totalPages}</span>
+                <button ${currentPage === totalPages ? 'disabled' : ''} onclick="loadBooks(${currentPage + 1})">Next</button>
+            `;
+        }
+
+        function setupHeader(displaying, totalBooks) {
+            const container = document.getElementById('header-section-info');
+            container.innerHTML = `Displaying ${displaying} / ${totalBooks} Books`;
+        }
+
+        function openEditModal(id, title, author, description, publishYear, isbn, image) {
+            document.getElementById('edit-book-id').value = id;
+            document.getElementById('edit-book-title').value = title;
+            document.getElementById('edit-book-author').value = author;
+            document.getElementById('edit-book-description').value = description;
+            document.getElementById('edit-book-publish-year').value = publishYear;
+            document.getElementById('edit-book-isbn').value = isbn;
+            document.getElementById('edit-book-image').value = '';
+            document.getElementById('edit-book-modal').style.display = 'block';
+        }
+
+        document.getElementById('add-book-button').addEventListener('click', () => {
+            document.getElementById('book-modal').style.display = 'block';
+        });
+
+        document.getElementById('close-add-book-modal').addEventListener('click', () => {
+            document.getElementById('book-modal').style.display = 'none';
+        });
+
+        document.getElementById('close-edit-book-modal').addEventListener('click', () => {
+            document.getElementById('edit-book-modal').style.display = 'none';
+        });
+        
+    </script>
+</body>
+</html>
